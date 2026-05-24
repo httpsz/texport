@@ -712,7 +712,9 @@ function renderVertical(lines, size, lineHeight, pad, r, g, b, font, fontFamily)
 // ─── DL ───
 function downloadPNG() {
   const link = document.createElement('a');
-  link.download = 'text.png';
+  const text = document.getElementById('textInput').value || ' ';
+  const firstLine = text.split("\n")[0];
+  link.download = `${firstLine}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
