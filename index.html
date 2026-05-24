@@ -360,6 +360,31 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   hr.divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* テキストスタイルトグル */
+  .style-group {
+    display: flex;
+    gap: 4px;
+  }
+  .style-btn {
+    flex: 1;
+    padding: 7px 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .style-btn:hover { border-color: var(--accent); color: var(--text); }
+  .style-btn.active { background: var(--accent); color: #0e0e0e; border-color: var(--accent); font-weight: 700; }
+  .style-btn.bold-btn { font-weight: 700; }
+  .style-btn.italic-btn { font-style: italic; }
+  .style-btn.underline-btn { text-decoration: underline; }
+  .style-btn.strike-btn { text-decoration: line-through; }
 </style>
 </head>
 <body>
@@ -439,6 +464,15 @@
       </div>
     </div>
 
+    <!-- テキストスタイル -->
+    <div>
+      <div class="section-label">テキストスタイル</div>
+      <div class="style-group">
+        <button class="style-btn bold-btn" id="btnBold" onclick="toggleStyle('bold')">B</button>
+        <button class="style-btn italic-btn" id="btnItalic" onclick="toggleStyle('italic')">I</button>
+      </div>
+    </div>
+
     <hr class="divider">
 
     <!-- 文字色 -->
@@ -498,9 +532,11 @@
 // ─── 状態 ───
 let customFontLoaded = false;
 let customFontFamily = '';
-let hAlign = 'left';   // left / center / right
-let vAlign = 'start';  // start / center / end
+let hAlign = 'left';
+let vAlign = 'start';
 let isVertical = false;
+let styleBold   = false;
+let styleItalic = false;
 
 const canvas = document.getElementById('previewCanvas');
 const ctx    = canvas.getContext('2d');
@@ -589,6 +625,15 @@ function toHex(v) { return v.toString(16).padStart(2, '0').toUpperCase(); }
   document.getElementById(id).addEventListener('input', render)
 );
 
+// ─── テキストスタイル ───
+function toggleStyle(type) {
+  if (type === 'bold')   styleBold   = !styleBold;
+  if (type === 'italic') styleItalic = !styleItalic;
+  document.getElementById('btnBold').classList.toggle('active', styleBold);
+  document.getElementById('btnItalic').classList.toggle('active', styleItalic);
+  render();
+}
+
 // ─── エフェクト追加 ───
 function onAddEffect() {
   const sel = document.getElementById('effectSelector');
@@ -606,7 +651,9 @@ function render() {
   const b = +document.getElementById('colB').value;
 
   const fontFamily = customFontLoaded ? `'${customFontFamily}'` : 'sans-serif';
-  const font = `${size}px ${fontFamily}`;
+  const fontStyle  = styleItalic ? 'italic ' : '';
+  const fontWeight = styleBold   ? 'bold '   : '';
+  const font = `${fontStyle}${fontWeight}${size}px ${fontFamily}`;
   const lineHeight = size * lhMul;
   const lines = text.split('\n');
 
@@ -712,9 +759,7 @@ function renderVertical(lines, size, lineHeight, pad, r, g, b, font, fontFamily)
 // ─── DL ───
 function downloadPNG() {
   const link = document.createElement('a');
-  const text = document.getElementById('textInput').value || ' ';
-  const firstLine = text.split("\n")[0];
-  link.download = `${firstLine}.png`;
+  link.download = 'text.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
