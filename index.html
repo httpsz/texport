@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Texport</title>
+<title>Text → PNG</title>
 
 <!-- エフェクトファイル（新しいエフェクトはここに追加） -->
 <script src="effects/stroke.js"></script>
@@ -407,6 +407,14 @@
     <!-- フォント -->
     <div>
       <div class="section-label">フォントファイル</div>
+      <!-- プリセット選択 -->
+      <div id="presetFontArea" style="margin-bottom:8px; display:none;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">フォルダから選ぶ</div>
+        <select id="presetFontSelect" onchange="loadPresetFont(this.value)">
+          <option value="">── 選択してください ──</option>
+        </select>
+      </div>
+      <!-- アップロード -->
       <div class="upload-zone" id="uploadZone">
         <input type="file" id="fontFile" accept=".ttf,.otf">
         <div class="upload-icon">⬆</div>
@@ -545,7 +553,44 @@ const ctx    = canvas.getContext('2d');
 populateEffectSelector();
 window.__effectChangeCallback = render;
 
-// ─── フォント ───
+// ─── プリセットフォント読み込み ───
+(async () => {
+  try {
+    const res = await fetch('fonts/fonts.json');
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!list.length) return;
+    const sel = document.getElementById('presetFontSelect');
+    list.forEach(filename => {
+      const opt = document.createElement('option');
+      opt.value = filename;
+      opt.textContent = filename.replace(/\.[^.]+$/, ''); // 拡張子を除いた表示
+      sel.appendChild(opt);
+    });
+    document.getElementById('presetFontArea').style.display = 'block';
+  } catch(e) {
+    // fonts.json がなければ何もしない
+  }
+})();
+
+async function loadPresetFont(filename) {
+  if (!filename) return;
+  try {
+    const url = `fonts/${filename}`;
+    const name = filename.replace(/\.[^.]+$/, '').replace(/\s/g, '_') + '_preset';
+    customFontFamily = name;
+    const font = new FontFace(name, `url(${url})`);
+    await font.load();
+    document.fonts.add(font);
+    customFontLoaded = true;
+    document.getElementById('fontNameLabel').textContent = '✓ ' + filename;
+    render();
+  } catch(e) {
+    document.getElementById('fontNameLabel').textContent = '読み込み失敗';
+  }
+}
+
+// ─── フォント（アップロード） ───
 document.getElementById('fontFile').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (file) await loadFont(file);
@@ -571,6 +616,7 @@ async function loadFont(file) {
     document.fonts.add(font);
     customFontLoaded = true;
     document.getElementById('fontNameLabel').textContent = '✓ ' + file.name;
+    document.getElementById('presetFontSelect').value = ''; // プリセット選択をリセット
     render();
   } catch(err) {
     document.getElementById('fontNameLabel').textContent = '読み込み失敗';
